@@ -49,7 +49,7 @@ func (app *Application) AddToCart() gin.HandlerFunc {
 
 		if err != nil {
 			log.Println(err)
-			c.AbortWithError(http.StatusInternalServerError)
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
@@ -86,11 +86,11 @@ func (app *Application) RemoveItem() gin.HandlerFunc {
 
 		if err != nil {
 			log.Println(err)
-			c.AbortWithError(http.StatusInternalServerError)
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		var ctx, cancel = context.WithTimeout(context.Background(), t*time.Second)
+		var ctx, cancel = context.WithTimeout(context.Background(), 50*time.Second)
 		defer cancel()
 
 		err = database.RemoveCartItem(ctx, app.prodCollection, app.userCollection, productID, userQueryID)
@@ -176,7 +176,7 @@ func (app *Application) InstantBuy() gin.HandlerFunc {
 		if productQueryID == "" {
 			log.Println("Product ID is empty")
 
-			c.AbortWithError(http.StatusInternalServerError, "Product id is empty")
+			c.AbortWithError(http.StatusInternalServerError, errors.New("Product ID is not found"))
 			return
 		}
 
@@ -184,7 +184,7 @@ func (app *Application) InstantBuy() gin.HandlerFunc {
 		if userQueryID == "" {
 			log.Println("User id is empty")
 
-			c.AbortWithError(http.StatusInternalServerError, "User id is empty")
+			c.AbortWithError(http.StatusInternalServerError, errors.New("User id is empty"))
 			return
 		}
 
@@ -193,7 +193,7 @@ func (app *Application) InstantBuy() gin.HandlerFunc {
 		if err != nil {
 			log.Println(err)
 
-			c.AbortWithError(http.StatusInternalServerError)
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 

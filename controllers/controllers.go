@@ -14,6 +14,7 @@ import (
 	"github.com/wesley-lewis/ecommerce-go/models"
 	generate "github.com/wesley-lewis/ecommerce-go/tokens"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -143,7 +144,7 @@ func Login() gin.HandlerFunc {
 		token, refreshToken, _ := generate.TokenGenerator(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_ID)
 		defer cancel()
 
-		generate.UpdateAllTokens(token, refreshToken, foundUser.User_ID)
+		generate.UpdateAllTokens(token, refreshToken, *foundUser.User_ID)
 
 		c.JSON(http.StatusFound, foundUser)
 	}
@@ -151,7 +152,21 @@ func Login() gin.HandlerFunc {
 
 func ProductViewerAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		var products models.Product
+		defer cancel()
+		if err := c.BindJSON(&products); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		products.Product_ID = primitive.NewObjectID()
+		_, anyerr := ProductCollection.InsertOne(ctx, products)
+		if anyerr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Not Created"})
+			return
+		}
+		defer cancel()
+		c.JSON(http.StatusOK, "Successfully added our Product Admin!!")
 	}
 }
 
